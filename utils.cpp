@@ -1,28 +1,39 @@
 #include <stdio.h>
 #include <math.h>
-#include <array>
+#include <vector>
 #include <emscripten/emscripten.h>
 
-#define N 8192
 #define PI 3.14159265
 
-#ifdef __cplusplus
 extern "C" {
-#endif
+  int main() {
+    printf("Hello world!\n");
+    return 0;
+  }
+
 /*
  * pre emphasis filter
  *   y(n) = x(n) - p x(n - 1)
  */
 EMSCRIPTEN_KEEPALIVE
-char * preEmphasis(std::array<float, N> _signal[N], float p) {
-  static char y[N];
-  y[0] = _signal[0];
+void preEmphasis(float * _signal, size_t length, float p) {
+  std::vector<float> y(length);
 
-  for(int i = 0; i < N; i++) {
-    y[i] = _signal[i] - ( p * _signal[i - 1]);
+  printf("signal at 200 is %f\n", _signal[200]);
+  printf("signal at 400 is %f\n", _signal[400]);
+  printf("signal at 800 is %f\n", _signal[800]);
+  printf("signal at 1600 is %f\n", _signal[1600]);
+
+  y.at(0) = _signal[0];
+
+  for(int i = 1; i < length; i++) {
+    y.at(i) = _signal[i] - ( p * _signal[i - 1]);
   }
 
-  return y;
+  printf("filtered signal at 200 is %f\n", y[200]);
+  printf("filtered signal at 400 is %f\n", y[400]);
+  printf("filtered signal at 800 is %f\n", y[800]);
+  printf("filtered signal at 1600 is %f\n", y[1600]);
 }
 
 /*
@@ -38,6 +49,4 @@ char * preEmphasis(std::array<float, N> _signal[N], float p) {
 //   return w;
 // }
 
-#ifdef __cplusplus
 }
-#endif
