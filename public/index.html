@@ -85,7 +85,7 @@
         var pointer = module._malloc(wavdata.length * 4)  // Float32Array
         var offset = pointer / 4;
         module.HEAPF32.set(wavdata, offset);
-        module.ccall('preEmphasis', null, ['number', 'number', 'number'], [pointer, wavdata.length, 0.97]);
+        module.ccall('mfcc', null, ['number', 'number'], [pointer, wavdata.length]);
         module._free(pointer);
       }
 
