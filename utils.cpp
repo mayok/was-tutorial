@@ -33,7 +33,7 @@ extern "C" {
     // TODO: この部分を先に計算しておきたい
     std::map<int,std::map<int,std::complex<double> > > bt;
     const std::complex<double> J(0,1);
-    for(int n=2;N<=NUM_FFT;n*=2) {
+    for(int n=2;n<=NUM_FFT;n*=2) {
       for(int k=0;k<=n/2-1;k++) {
         bt[n][k] = exp(-2*PI*k/n*J);
       }
@@ -152,7 +152,7 @@ void mfcc(float * _signal, size_t length) {
 
   preEmphHamming(s);
   powerSpectrum(s);
-  // lmfb(s);
+  lmfb(s);
   // dct(s);
 
   // printf("s at 100 is %f\n", s[100]);
