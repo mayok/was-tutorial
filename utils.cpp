@@ -86,7 +86,6 @@ extern "C" {
         filterbank[i][j] = 1.0 - (j - indexcenters[i]) * decrement;
     }
 
-    // return filterbank
     // fcenters は plot する時に必要になる plot(x: fcenters, y: filterbank);
   }
 
@@ -119,43 +118,70 @@ void preEmphHamming(std::vector<float>& _signal) {
 
   // power spectrum
   for(int i = 0; i<NUM_FFT/2+1; i++) {
-    _signal[i] = pow(abs(fftc[i]), 2);
+    // _signal[i] = pow(abs(fftc[i]), 2);
+    _signal[i] = abs(fftc[i]);
   }
  }
 
  EMSCRIPTEN_KEEPALIVE
- void lmfb(std::vector<float>& _signal) {
+ void lmfb(std::vector<float>& _signal, float mspec[20]) {
    float filterbank[20][20];
    melFilterBank(filterbank);
 
-   std::vector<float> mspec(20);
+  //  std::vector<float> mspec(20);
    for(int i = 0; i < 20; i++) {
     float t = 0.0;
     for(int j = 0; j < 20; j++) {
       t += _signal[i] * filterbank[i][j];
     }
-    mspec.at(i) = log10( t );
+    mspec[i] = log10( t );
    }
  }
 
- // EMSCRIPTEN_KEEPALIVE
- // void dct(void) {
- //
- // }
+  /*
+   * DCT: Discrete Cosine Transform
+   *
+   *            N-1
+   *  y[k] = 2* sum x[n]*cos(pi*k*(2n+1)/(2*N)), 0 <= k < N.
+   *            n=0
+   */
+  EMSCRIPTEN_KEEPALIVE
+  void dct(float mspec[20]) {
+    float y[20];
+    for(int k = 0; k < 20; k++) {
+      if(k == 0)
+        float t = sqrt(1 / 80);
+      float t = sqrt(1 / 40);
+
+      float s = 0.0;
+      for(int n = 0; n < 20; n++) {
+        s += mspec[n] * cos( PI * k * ( 2 * n + 1 ) / 40.0);
+      }
+
+      y[k] = t * 2 * s;
+      // mspec[k] = t * 2 * s;
+    }
+    mspec = y;
+  }
 
 
 EMSCRIPTEN_KEEPALIVE
 void mfcc(float * _signal, size_t length) {
-  // TODO: もっといい感じの書き方
+  float mspec[20];
+
+  // TODO: 配列から vector に代入する, もっといい感じの書き方
   std::vector<float> s(length);
   for(int i=0; i<length; i++) s.at(i) = _signal[i];
 
   preEmphHamming(s);
   powerSpectrum(s);
-  lmfb(s);
-  // dct(s);
+  lmfb(s, mspec);
+  dct(mspec);
 
-  // printf("s at 100 is %f\n", s[100]);
+  printf("mfcc: \n");
+  for(int i = 0; i < 12; i++) {
+    printf("%d: %f\n", i, mspec[i]);
+  }
 }
 
 }
