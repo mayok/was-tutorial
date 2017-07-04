@@ -89,54 +89,54 @@ extern "C" {
     // fcenters は plot する時に必要になる plot(x: fcenters, y: filterbank);
   }
 
-/*
- * pre emphasis filter and hamming window
- *
- */
-EMSCRIPTEN_KEEPALIVE
-void preEmphHamming(std::vector<float>& _signal) {
+  /*
+  * pre emphasis filter and hamming window
+  *
+  */
+  EMSCRIPTEN_KEEPALIVE
+  void preEmphHamming(std::vector<float>& _signal) {
 
-  // 0.54 - 0.46 * cos( 2.0 * PI * i / (N - 1) ) = 0.08 if N == 1
-  // y.at(0) = _signal[0] * 0.08;
-  _signal.at(0) *= 0.08;
+    // 0.54 - 0.46 * cos( 2.0 * PI * i / (N - 1) ) = 0.08 if N == 1
+    // y.at(0) = _signal[0] * 0.08;
+    _signal.at(0) *= 0.08;
 
-  for (int i = 1; i < _signal.size(); i++) {
-    _signal.at(i) -= 0.97 * _signal.at(i - 1);
-    _signal.at(i) *= 0.54 - 0.46 * cos( 2.0 * PI * i / (_signal.size() - 1) );
+    for (int i = 1; i < _signal.size(); i++) {
+      _signal.at(i) -= 0.97 * _signal.at(i - 1);
+      _signal.at(i) *= 0.54 - 0.46 * cos( 2.0 * PI * i / (_signal.size() - 1) );
+    }
   }
-}
 
-/*
- *  fft, power spectrum
- *
- */
- EMSCRIPTEN_KEEPALIVE
- void powerSpectrum(std::vector<float>& _signal) {
-   _signal.resize(NUM_FFT);
-  std::vector<std::complex<double> > fc(_signal.begin(), _signal.end());
-  std::vector<std::complex<double> > fftc = fft(fc);
+  /*
+   *  fft, power spectrum
+   *
+   */
+  EMSCRIPTEN_KEEPALIVE
+  void powerSpectrum(std::vector<float>& _signal) {
+    _signal.resize(NUM_FFT);
+    std::vector<std::complex<double> > fc(_signal.begin(), _signal.end());
+    std::vector<std::complex<double> > fftc = fft(fc);
 
-  // power spectrum
-  for(int i = 0; i<NUM_FFT/2+1; i++) {
+   // power spectrum
+   for(int i = 0; i<NUM_FFT/2+1; i++) {
     // _signal[i] = pow(abs(fftc[i]), 2);
     _signal[i] = abs(fftc[i]);
-  }
- }
-
- EMSCRIPTEN_KEEPALIVE
- void lmfb(std::vector<float>& _signal, float mspec[20]) {
-   float filterbank[20][20];
-   melFilterBank(filterbank);
-
-  //  std::vector<float> mspec(20);
-   for(int i = 0; i < 20; i++) {
-    float t = 0.0;
-    for(int j = 0; j < 20; j++) {
-      t += _signal[i] * filterbank[i][j];
-    }
-    mspec[i] = log10( t );
    }
- }
+  }
+
+  EMSCRIPTEN_KEEPALIVE
+  void lmfb(std::vector<float>& _signal, float mspec[20]) {
+    float filterbank[20][20];
+    melFilterBank(filterbank);
+
+    //  std::vector<float> mspec(20);
+    for(int i = 0; i < 20; i++) {
+      float t = 0.0;
+      for(int j = 0; j < 20; j++) {
+        t += _signal[i] * filterbank[i][j];
+      }
+      mspec[i] = log10( t );
+    }
+  }
 
   /*
    * DCT: Discrete Cosine Transform
@@ -159,29 +159,28 @@ void preEmphHamming(std::vector<float>& _signal) {
       }
 
       y[k] = t * 2 * s;
-      // mspec[k] = t * 2 * s;
     }
     mspec = y;
   }
 
 
-EMSCRIPTEN_KEEPALIVE
-void mfcc(float * _signal, size_t length) {
-  float mspec[20];
+  EMSCRIPTEN_KEEPALIVE
+  void mfcc(float * _signal, size_t length) {
+    float mspec[20];
 
-  // TODO: 配列から vector に代入する, もっといい感じの書き方
-  std::vector<float> s(length);
-  for(int i=0; i<length; i++) s.at(i) = _signal[i];
+    // TODO: 配列から vector に代入する, もっといい感じの書き方
+    std::vector<float> s(length);
+    for(int i=0; i<length; i++) s.at(i) = _signal[i];
 
-  preEmphHamming(s);
-  powerSpectrum(s);
-  lmfb(s, mspec);
-  dct(mspec);
+    preEmphHamming(s);
+    powerSpectrum(s);
+    lmfb(s, mspec);
+    dct(mspec);
 
-  printf("mfcc: \n");
-  for(int i = 0; i < 12; i++) {
-    printf("%d: %f\n", i, mspec[i]);
+    printf("mfcc: \n");
+    for(int i = 0; i < 12; i++) {
+      printf("%d: %f\n", i, mspec[i]);
+    }
   }
-}
 
 }
