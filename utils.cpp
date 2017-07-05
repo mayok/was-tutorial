@@ -15,37 +15,76 @@ extern "C" {
     return 0;
   }
 
+  // EMSCRIPTEN_KEEPALIVE
+  // std::vector<std::complex<double> > fft(std::vector<std::complex<double> > x) {
+  //   int N = x.size();
+  //   if (N==1) return x;
+  //
+  //   std::vector<std::complex<double> > xe(N/2,0), xo(N/2, 0), Xjo, Xjo2;
+  //   int i;
+  //
+  //   for(i=0;i<N;i+=2) xe[i/2] = x[i];
+  //   for(i=1;i<N;i+=2) xo[(i-1)/2] = x[i];
+  //
+  //   Xjo = fft(xe);
+  //   Xjo2 = fft(xo);
+  //   Xjo.insert (Xjo.end(), Xjo2.begin(), Xjo2.end());
+  //
+  //   // TODO: この部分を先に計算しておきたい
+  //   std::map<int,std::map<int,std::complex<double> > > bt;
+  //   const std::complex<double> J(0,1);
+  //   for(int n=2;n<=NUM_FFT;n*=2) {
+  //     for(int k=0;k<=n/2-1;k++) {
+  //       bt[n][k] = exp(-2*PI*k/n*J);
+  //     }
+  //   }
+  //
+  //   for(i=0;i<N/2-1;i++) {
+  //     std::complex<double> t = Xjo[i], tw = bt[N][i];
+  //     Xjo[i] = t + tw * Xjo[i+N/2];
+  //     Xjo[i+N/2] = t = tw * Xjo[i+N/2];
+  //   }
+  //
+  //   return Xjo;
+  // }
+
+  // fft
   EMSCRIPTEN_KEEPALIVE
-  std::vector<std::complex<double> > fft(std::vector<std::complex<double> > x) {
-    int N = x.size();
-    if (N==1) return x;
+  void fft(std::vector<float>& _signal, std::vector<float>& im) {
+    // std::vector<std::complex<float> > でできる
+    size_t n = _signal.size();
 
-    std::vector<std::complex<double> > xe(N/2,0), xo(N/2, 0), Xjo, Xjo2;
-    int i;
+    for(int i = 0; i < n; i++) {
+      int t = 0;
+      for(int j = 0, h = i, k = n; ; h >>= 1) {
+        j = (j << 1) | (h & 1);
 
-    for(i=0;i<N;i+=2) xe[i/2] = x[i];
-    for(i=1;i<N;i+=2) xo[(i-1)/2] = x[i];
+        k>>=1;
+        if(k == 0) {
+          t = j;
+          break;
+        }
+      }
 
-    Xjo = fft(xe);
-    Xjo2 = fft(xo);
-    Xjo.insert (Xjo.end(), Xjo2.begin(), Xjo2.end());
-
-    // TODO: この部分を先に計算しておきたい
-    std::map<int,std::map<int,std::complex<double> > > bt;
-    const std::complex<double> J(0,1);
-    for(int n=2;n<=NUM_FFT;n*=2) {
-      for(int k=0;k<=n/2-1;k++) {
-        bt[n][k] = exp(-2*PI*k/n*J);
+      if(t > i) {
+        std::swap(_signal[i], _signal[t]);
       }
     }
+    for(int hn = 1; hn * 2 <= n; hn *= 2) {
+      for(int i = 0; i < n; i+= hn * 2) {
+        for(int j = i; j < i + hn; j++) {
+          float _cos = cos(PI * (j - i) / hn);
+          float _sin = sin(PI * (j - i) / hn);
+          float tre = _signal[j+hn] * _cos + im[j+hn] * _sin;
+          float tim = -1 * _signal[j+hn] * _sin + im[j+hn] * _cos;
 
-    for(i=0;i<N/2-1;i++) {
-      std::complex<double> t = Xjo[i], tw = bt[N][i];
-      Xjo[i] = t + tw * Xjo[i+N/2];
-      Xjo[i+N/2] = t = tw * Xjo[i+N/2];
+          _signal[j+hn] = _signal[j] - tre;
+          im[j+hn] = im[j] - tim;
+          _signal[j] += tre;
+          im[j] += tim;
+        }
+      }
     }
-
-    return Xjo;
   }
 
  /*
@@ -113,13 +152,17 @@ extern "C" {
   EMSCRIPTEN_KEEPALIVE
   void powerSpectrum(std::vector<float>& _signal) {
     _signal.resize(NUM_FFT);
-    std::vector<std::complex<double> > fc(_signal.begin(), _signal.end());
-    std::vector<std::complex<double> > fftc = fft(fc);
+    std::vector<float> im(_signal.size(), 0);
+    fft(_signal, im);
 
    // power spectrum
    for(int i = 0; i<NUM_FFT/2+1; i++) {
     // _signal[i] = pow(abs(fftc[i]), 2);
-    _signal[i] = abs(fftc[i]);
+    // _signal[i] = abs(fftc[i]);
+    _signal[i] = _signal[i] * _signal[i] + im[i] * im[i];
+
+    // amplitude spectrum
+    // _signal[i] = sqrt(_signal[i]);
    }
   }
 
