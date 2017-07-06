@@ -186,10 +186,7 @@ extern "C" {
   EMSCRIPTEN_KEEPALIVE
   void mfcc(float * _signal, size_t length) {
     std::vector<float> mspec(20);
-
-    // TODO: 配列から vector に代入する, もっといい感じの書き方
-    std::vector<float> s(length);
-    for(int i=0; i<length; i++) s.at(i) = _signal[i];
+    std::vector<float> s(std::begin(_signal), std::end(_signal));
 
     preEmphHamming(s);
     powerSpectrum(s);
