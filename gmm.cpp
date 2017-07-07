@@ -1,5 +1,7 @@
 #include <vector>
 #include <cmath>
+#include <Eigen/Dense>
+#include <Eigen/LU>
 
 // ガウス分布の数
 #define K 2
@@ -10,11 +12,18 @@
 // データの数
 #define N 100
 
+#define PI 4 * atan(1.0)
+
+// 多次元 (多変量) ガウス分布
 float gaussian(x, mu, sigma) {
-  // 多次元 (多変量) ガウス分布
+  return exp( -0.5 * (x - mu) * sigma.inverse() * (x - mu).transpose())
+    / pow(sqrt(2 * PI), D) * sqrt(sigma.determinant());
 }
 
 int main() {
+  // 1行X列の行列 の vector
+  // std::vector<Eigen::MatrixXd> x;
+
   // 平均 mu, 分散 sigma, 混合係数 pi を初期化する
   std::vector<float> mu(K);
 
