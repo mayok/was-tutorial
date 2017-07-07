@@ -33,7 +33,7 @@ int main() {
       }
 
       for(int k = 0; k < K; k++)
-        gaussian[n][k] = pi[k] * gaussian(x[n], mu[k], sigma[k]) / t;
+        gamma[n][k] = pi[k] * gaussian(x[n], mu[k], sigma[k]) / t;
     }
 
     // M-step: 負担率を使ってパラメータを更新する
