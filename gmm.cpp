@@ -3,6 +3,8 @@
 #include <Eigen/Dense>
 #include <Eigen/LU>
 
+using namespace Eigen;
+
 // ガウス分布の数
 #define K 2
 
@@ -12,26 +14,46 @@
 // データの数
 #define N 100
 
-#define PI 4 * atan(1.0)
+#define PI 4*atan(1.0)
+
+typedef Eigen::Matrix<float, 1, D> m_d;
 
 // 多次元 (多変量) ガウス分布
-float gaussian(x, mu, sigma) {
-  return exp( -0.5 * (x - mu) * sigma.inverse() * (x - mu).transpose())
+float gaussian(VectorXd x, VectorXd mu, MatrixXd sigma) {
+  return exp( -0.5 * (x - mu).dot( sigma.inverse() * (x - mu).transpose() ) )
     / pow(sqrt(2 * PI), D) * sqrt(sigma.determinant());
 }
 
 int main() {
-  // 1行X列の行列 の vector
-  // std::vector<Eigen::MatrixXd> x;
+  // N 行 D 列
+  std::vector<m_d> x(N, m_d::Random());
 
   // 平均 mu, 分散 sigma, 混合係数 pi を初期化する
-  std::vector<float> mu(K);
+  // 平均
+  /*
+      [
+        [mu_x, mu_y], // 次元数 (D) 個
+        [mu_x, mu_y],
+        ... K 個
+      ]
+      ガウス分布 K に対する, X軸の平均，Y軸の平均 ...
+   */
+  std::vector<m_d> mu(K, m_d::Random());
 
-  // TODO: sigma は行列
-  std::vector<float> sigma(K);
+  // 分散 (分散共分散行列)
+  // D x D 行列
+  std::vector<Matrix<float,D,D> > sigma(K, Matrix<float,D,D>::Random());
 
   // TODO: 制約 Sigma(k) pi_k = 1 を満たすように初期化する
+  std::random_device rd;
+  std::mt19937 mt(rd());
+  std::uniform_real_distribution<double> distribution(0.0, 1.0);
   std::vector<float> pi(K);
+  for(int i=0; i<K; i++) {
+    pi[i] = distribution(mt);
+  }
+
+  // TODO: gamma, N, K
 
   while(true) {
     // E-step: パラメータ (mu, sigma, pi) を使って負担率 gamma を計算する
@@ -54,18 +76,18 @@ int main() {
       }
 
       // 平均
-      float t = 0.0;
+      float _mu = 0.0;
       for(int n = 0; n < N; n++) {
-        t = gamma[n][k] * x[n]
+        _mu += gamma[n][k] * x[n]
       }
-      mu[k] = t / Nk;
+      mu[k] = _mu / Nk;
 
       // 分散
-      float t = 0.0;
+      MatrixXd _sigma;
       for(int n = 0; n < N; n++) {
-        t = gamma[n][k] * (x[n] - mu[k]) * ( (x[n] - mu[k]) の転置行列 )
+        _sigma += gamma[n][k] * (x[n] - mu[k]) * (x[n] - mu[k]).transpose();
       }
-      sigma[k] = t / Nk;
+      sigma[k] = _sigma / Nk;
 
       // 混合係数
       pi[k] = Nk / N;
