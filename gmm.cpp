@@ -54,7 +54,7 @@ int main() {
       // 分散
       float t = 0.0;
       for(int n = 0; n < N; n++) {
-        t = gamma[n][k] * (x[n] - mu[k]) * ( (x[n] - mu[k]) の転地行列 )
+        t = gamma[n][k] * (x[n] - mu[k]) * ( (x[n] - mu[k]) の転置行列 )
       }
       sigma[k] = t / Nk;
 
