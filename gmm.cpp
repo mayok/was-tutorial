@@ -1,5 +1,6 @@
 #include <vector>
 #include <cmath>
+#include <random>
 #include <Eigen/Dense>
 #include <Eigen/LU>
 
@@ -19,7 +20,7 @@ using namespace Eigen;
 typedef Eigen::Matrix<float, 1, D> m_d;
 
 // 多次元 (多変量) ガウス分布
-float gaussian(VectorXd x, VectorXd mu, MatrixXd sigma) {
+float gaussian(m_d x, m_d mu, Matrix<float,D,D> sigma) {
   return exp( -0.5 * (x - mu).dot( sigma.inverse() * (x - mu).transpose() ) )
     / pow(sqrt(2 * PI), D) * sqrt(sigma.determinant());
 }
@@ -53,7 +54,8 @@ int main() {
     pi[i] = distribution(mt);
   }
 
-  // TODO: gamma, N, K
+  // gamma, N, K
+  std::vector<std::vector<float> > gamma(N, std::vector<float>(K));
 
   while(true) {
     // E-step: パラメータ (mu, sigma, pi) を使って負担率 gamma を計算する
@@ -76,16 +78,16 @@ int main() {
       }
 
       // 平均
-      float _mu = 0.0;
+      m_d _mu = m_d::Zero();
       for(int n = 0; n < N; n++) {
-        _mu += gamma[n][k] * x[n]
+        _mu += gamma[n][k] * x[n];
       }
       mu[k] = _mu / Nk;
 
       // 分散
-      MatrixXd _sigma;
+      Matrix<float, D, D> _sigma;
       for(int n = 0; n < N; n++) {
-        _sigma += gamma[n][k] * (x[n] - mu[k]) * (x[n] - mu[k]).transpose();
+        _sigma += gamma[n][k] * (x[n] - mu[k]).transpose() * (x[n] - mu[k]);
       }
       sigma[k] = _sigma / Nk;
 
