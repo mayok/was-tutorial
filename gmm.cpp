@@ -26,7 +26,7 @@ float gaussian(VectorXd x, VectorXd mu, MatrixXd sigma) {
 
 int main() {
   // N 行 D 列
-  std::vector<m_d> x(N, m_d::Random());
+  std::vector<Matirx<float, N, D> x(N, Matrix<float, N, D>::Random());
 
   // 平均 mu, 分散 sigma, 混合係数 pi を初期化する
   // 平均
