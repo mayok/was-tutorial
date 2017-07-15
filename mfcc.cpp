@@ -186,17 +186,22 @@ extern "C" {
   EMSCRIPTEN_KEEPALIVE
   void mfcc(float * _signal, size_t length) {
     std::vector<float> mspec(20);
-    std::vector<float> s(std::begin(_signal), std::end(_signal));
+    std::vector<float> s(length);
+    for(int i=0; i<length; i++)
+      s[i] = _signal[i];
+
 
     preEmphHamming(s);
     powerSpectrum(s);
     lmfb(s, mspec);
     dct(mspec);
 
-    printf("mfcc: \n");
-    for(int i = 0; i < 12; i++) {
-      printf("%d: %f\n", i, mspec[i]);
-    }
+    // printf("mfcc 0: %f\n", mspec[0]);
+
+    // printf("mfcc: \n");
+    // for(int i = 0; i < 12; i++) {
+    //   printf("%d: %f\n", i, mspec[i]);
+    // }
   }
 
 }
