@@ -40,6 +40,7 @@
         var inputBuffer = e.inputBuffer;
         // var inputData = inputBuffer.getChannelData(0) || [];
         audioBuffer = inputBuffer;
+
       }
 
       function fetchWasm(url) {
@@ -55,9 +56,9 @@
       }
       function callCPP() {
         // call c++ function
-        var pointer = module._malloc(audioBuffer.length * 4)  // Float32Array
-        var offset = pointer / 4;
-        module.HEAPF32.set(audioBuffer.getChannelData(0), offset);
+        var pointer = module._malloc(audioBuffer.length * 8)
+        var offset = pointer / 8;
+        module.HEAPF64.set(audioBuffer.getChannelData(0), offset);
         module.ccall('mfcc', null, ['number', 'number'], [pointer, audioBuffer.length]);
         module._free(pointer);
       }
