@@ -16,8 +16,8 @@ extern "C" {
 
   // fft
   EMSCRIPTEN_KEEPALIVE
-  void fft(std::vector<double>& _signal, std::vector<double>& im) {
-    // std::vector<std::complex<double> > でできる
+  void fft(std::vector<float>& _signal, std::vector<float>& im) {
+    // std::vector<std::complex<float> > でできる
     size_t n = _signal.size();
 
     for(int i = 0; i < n; i++) {
@@ -39,10 +39,10 @@ extern "C" {
     for(int hn = 1; hn * 2 <= n; hn *= 2) {
       for(int i = 0; i < n; i+= hn * 2) {
         for(int j = i; j < i + hn; j++) {
-          double _cos = cos(PI * (j - i) / hn);
-          double _sin = sin(PI * (j - i) / hn);
-          double tre = _signal[j+hn] * _cos + im[j+hn] * _sin;
-          double tim = -1 * _signal[j+hn] * _sin + im[j+hn] * _cos;
+          float _cos = cos(PI * (j - i) / hn);
+          float _sin = sin(PI * (j - i) / hn);
+          float tre = _signal[j+hn] * _cos + im[j+hn] * _sin;
+          float tim = -1 * _signal[j+hn] * _sin + im[j+hn] * _cos;
 
           _signal[j+hn] = _signal[j] - tre;
           im[j+hn] = im[j] - tim;
@@ -58,18 +58,18 @@ extern "C" {
   *
   */
   EMSCRIPTEN_KEEPALIVE
-  void melFilterBank(double filterbank[20][1024]) {
+  void melFilterBank(float filterbank[20][1024]) {
     int indexcenters[20] = { 6, 13, 21, 31, 42, 55, 71, 90, 112, 138, 169, 205, 248, 299, 358, 429, 512, 610, 726, 863 };
     int indexstart[20] = { 0, 6, 13, 21, 31, 42, 55, 71, 90, 112, 138, 169, 205, 248, 299, 358, 429, 512, 610, 726 };
     int indexstop[20] = { 13, 21, 31, 42, 55, 71, 90, 112, 138, 169, 205, 248, 299, 358, 429, 512, 610, 726, 863, 1024 };
 
     for(int i = 0; i < 20; i++) {
 
-      double increment = 1.0 / ( indexcenters[i] - indexstart[i] );
+      float increment = 1.0 / ( indexcenters[i] - indexstart[i] );
       for(int j = indexstart[i]; j < indexcenters[i]; j++)
         filterbank[i][j] = ( j - indexstart[i] ) * increment;
 
-      double decrement = 1.0 / ( indexstop[i] - indexcenters[i]);
+      float decrement = 1.0 / ( indexstop[i] - indexcenters[i]);
       for(int j = indexcenters[i]; j < indexstop[i]; j++)
         filterbank[i][j] = 1.0 - (j - indexcenters[i]) * decrement;
     }
@@ -80,9 +80,9 @@ extern "C" {
   *
   */
   EMSCRIPTEN_KEEPALIVE
-  void preEmphHamming(std::vector<double>& _signal) {
+  void preEmphHamming(std::vector<float>& _signal) {
     size_t len = _signal.size();
-    std::vector<double> y(len, _signal[0] * 0.08);
+    std::vector<float> y(len, _signal[0] * 0.08);
 
     for (int i = 1; i < len; i++) {
       y[i] = _signal[i] - ( 0.97 * _signal[i-1]);
@@ -96,9 +96,9 @@ extern "C" {
    *
    */
   EMSCRIPTEN_KEEPALIVE
-  void powerSpectrum(std::vector<double>& _signal) {
+  void powerSpectrum(std::vector<float>& _signal) {
     _signal.resize(NUM_FFT, 0);
-    std::vector<double> im(_signal.size(), 0);
+    std::vector<float> im(_signal.size(), 0);
     fft(_signal, im);
 
    // power spectrum
@@ -111,12 +111,12 @@ extern "C" {
   }
 
   EMSCRIPTEN_KEEPALIVE
-  void lmfb(std::vector<double>& _signal, std::vector<double>& mspec) {
-    double filterbank[20][1024];
+  void lmfb(std::vector<float>& _signal, std::vector<float>& mspec) {
+    float filterbank[20][1024];
     melFilterBank(filterbank);
 
     for(int i = 0; i < 20; i++) {
-      double t = 0.0;
+      float t = 0.0;
       for(int j = 0; j < 1024; j++) {
         t += _signal[j] * filterbank[i][j];
       }
@@ -132,10 +132,10 @@ extern "C" {
    *            n=0
    */
   EMSCRIPTEN_KEEPALIVE
-  void dct(std::vector<double>& mspec) {
-    std::vector<double> y(20);
+  void dct(std::vector<float>& mspec) {
+    std::vector<float> y(20);
     for(int k = 0; k < 20; k++) {
-      double s = 0.0;
+      float s = 0.0;
       for(int n = 0; n < 20; n++) {
         s += mspec[n] * cos( PI * k * ( 2 * n + 1 ) / 40.0);
       }
@@ -149,9 +149,9 @@ extern "C" {
 
 
   EMSCRIPTEN_KEEPALIVE
-  void mfcc(double * _signal, size_t length) {
-    std::vector<double> mspec(20);
-    std::vector<double> s(length);
+  void mfcc(float * _signal, size_t length) {
+    std::vector<float> mspec(20);
+    std::vector<float> s(length);
     for(int i=0; i<length; i++)
       s[i] = _signal[i];
 

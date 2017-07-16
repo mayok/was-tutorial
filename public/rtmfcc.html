@@ -38,9 +38,10 @@
 
       function rtmfccProcess(e) {
         if(document.getElementById('checkbox').checked && pointer !== null) {
-          var offset = pointer / 8;
-          module.HEAPF64.set(e.inputBuffer.getChannelData(0), offset);
+          var offset = pointer / 4;
+          module.HEAPF32.set(e.inputBuffer.getChannelData(0), offset);
           module.ccall('mfcc', null, ['number', 'number'], [pointer, 2048]);
+
         }
       }
 
@@ -57,7 +58,7 @@
       }
       function mallocation() {
         if(document.getElementById('checkbox').checked) {
-          pointer = module._malloc(2048 * 8)
+          pointer = module._malloc(2048 * 4);
         } else {
           module._free(pointer);
           pointer = null;
