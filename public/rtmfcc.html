@@ -6,6 +6,8 @@
   </head>
   <body>
 
+    <button id='btn'>call cpp function</button>
+
     <script type="text/javascript" src="tmp.js"></script>
     <script>
       // for wasm
@@ -13,6 +15,7 @@
 
       window.AudioContext = window.AudioContext || window.webkitAudioContext;
       const context = new AudioContext();
+      var audioBuffer = null;
 
       var processor = context.createScriptProcessor(2048, 1, 1);
       processor.onaudioprocess = rtmfccProcess;
@@ -35,22 +38,8 @@
 
       function rtmfccProcess(e) {
         var inputBuffer = e.inputBuffer;
-        var inputData = inputBuffer.getChannelData(0) || [];
-
-        // debug
-        // var outputData = e.outputBuffer.getChannelData(0);
-        // inputData.forEach((v, i) => {
-        //   outputData[i] = v;
-        // });
-
-        if(inputBuffer === undefined) return;
-
-        // call c++ function
-        var pointer = module._malloc(inputBuffer.length * 4)  // Float32Array
-        var offset = pointer / 4;
-        module.HEAPF32.set(inputData, offset);
-        module.ccall('mfcc', null, ['number', 'number'], [pointer, inputBuffer.length]);
-        module._free(pointer);
+        // var inputData = inputBuffer.getChannelData(0) || [];
+        audioBuffer = inputBuffer;
       }
 
       function fetchWasm(url) {
@@ -64,8 +53,17 @@
             module = Module(moduleArgs);
           });
       }
+      function callCPP() {
+        // call c++ function
+        var pointer = module._malloc(audioBuffer.length * 4)  // Float32Array
+        var offset = pointer / 4;
+        module.HEAPF32.set(audioBuffer.getChannelData(0), offset);
+        module.ccall('mfcc', null, ['number', 'number'], [pointer, audioBuffer.length]);
+        module._free(pointer);
+      }
 
       module = fetchWasm('tmp.wasm');
+      document.getElementById('btn').addEventListener('click', callCPP, false);
     </script>
   </body>
 </html>
