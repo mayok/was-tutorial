@@ -8,21 +8,20 @@
 
     <script type="text/javascript" src="tmp.js"></script>
     <script>
+      // for wasm
+      let module;
+
       window.AudioContext = window.AudioContext || window.webkitAudioContext;
       const context = new AudioContext();
-      let audioBuffer = null;
 
-      var processor = context.createScriptProcessor(1024, 1, 1);
+      var processor = context.createScriptProcessor(2048, 1, 1);
       processor.onaudioprocess = rtmfccProcess;
       processor.connect(context.destination);
 
       var bf = context.createBiquadFilter();
       bf.type = 'lowpass';
-      bf.frequency.value = 2048;
+      bf.frequency.value = 1024;
       bf.connect(processor);
-
-      // for wasm
-      let module;
 
       navigator.mediaDevices.getUserMedia({
         audio: true,
@@ -36,41 +35,22 @@
 
       function rtmfccProcess(e) {
         var inputBuffer = e.inputBuffer;
-        var outputBuffer = e.outputBuffer;
         var inputData = inputBuffer.getChannelData(0) || [];
-        // var outputData = outputBuffer.getChannelData(0);
 
-        var sampleRate = context.sampleRate;
-        var len = inputBuffer.length
-        var t = _range(0.0, len / sampleRate, 1 / sampleRate);
+        // debug
+        // var outputData = e.outputBuffer.getChannelData(0);
+        // inputData.forEach((v, i) => {
+        //   outputData[i] = v;
+        // });
 
-        var center = len / 2;
-        var cuttime = 0.04;
-        // var wav = audioBuffer.getChannelData(0);
-        var wavdata = inputData.slice(center - cuttime/2*sampleRate, center + cuttime/2*sampleRate);
-        var time = t.slice(center - cuttime/2*sampleRate, center + cuttime/2*sampleRate);
+        if(inputBuffer === undefined) return;
 
         // call c++ function
-        var pointer = module._malloc(wavdata.length * 4)  // Float32Array
+        var pointer = module._malloc(inputBuffer.length * 4)  // Float32Array
         var offset = pointer / 4;
-        module.HEAPF32.set(wavdata, offset);
-        module.ccall('mfcc', null, ['number', 'number'], [pointer, wavdata.length]);
+        module.HEAPF32.set(inputData, offset);
+        module.ccall('mfcc', null, ['number', 'number'], [pointer, inputBuffer.length]);
         module._free(pointer);
-      }
-
-      function _range(start, stop, step = 1) {
-        var index = 0;
-        var length = (stop - start) / step;
-        var result = Array(length);
-
-        while(length) {
-          result[index] = start;
-          start += step;
-          index += 1;
-          length -= 1;
-        }
-
-        return result;
       }
 
       function fetchWasm(url) {
