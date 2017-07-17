@@ -25,6 +25,11 @@ function mfcc( audioBuffer ) {
   // pre emphasis filter and hamming window
   wavdata = preEmphHamming(wavdata);
 
+  // TODO: 閾値の適切な値を決める
+  console.log(Math.max(...wavdata));
+  if( Math.max(...wavdata) < 0.01 )
+    return null;
+
   // DFT
   // number of samples
   var n = 2048
@@ -144,7 +149,7 @@ function preEmphHamming(signal) {
 
   for(var i = 1; i < n; i++) {
     y[i] = signal[i] - (0.97 * signal[i-1]);
-    y[i] = 0.54 - 0.46 * Math.cos( 2.0 * Math.PI * i / (n - 1));
+    y[i] *= 0.54 - 0.46 * Math.cos( 2.0 * Math.PI * i / (n - 1));
   }
 
   return y;
