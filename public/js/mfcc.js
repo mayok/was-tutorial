@@ -22,11 +22,15 @@ function mfcc( audioBuffer ) {
   var wav = audioBuffer.getChannelData(0);
   var wavdata = wav.slice(center - cuttime/2*sampleRate, center + cuttime/2*sampleRate);
 
-  // pre emphasis filter and hamming window
-  wavdata = preEmphHamming(wavdata);
+  // pre-emphasis filter
+  var wavdata = preEmphasis(wavdata, 0.97);
+
+  var hammingWindow = hamming(wavdata.length);
+  for(var i = 0; i < wavdata.length; i +=1 ) {
+    wavdata[i] *= hammingWindow[i]
+  }
 
   // TODO: 閾値の適切な値を決める
-  console.log(Math.max(...wavdata));
   if( Math.max(...wavdata) < 0.01 )
     return null;
 
