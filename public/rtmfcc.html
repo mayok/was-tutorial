@@ -13,6 +13,7 @@
       // for wasm
       let module;
       let pointer = null;
+      let cpp_mfcc = null;
 
       window.AudioContext = window.AudioContext || window.webkitAudioContext;
       const context = new AudioContext();
@@ -40,7 +41,8 @@
         if(document.getElementById('checkbox').checked && pointer !== null) {
           var offset = pointer / 4;
           module.HEAPF32.set(e.inputBuffer.getChannelData(0), offset);
-          module.ccall('mfcc', null, ['number', 'number'], [pointer, 2048]);
+          // module.ccall('mfcc', null, ['number', 'number'], [pointer, 2048]);
+          cpp_mfcc(pointer, 2048);
 
         }
       }
@@ -59,6 +61,7 @@
       function mallocation() {
         if(document.getElementById('checkbox').checked) {
           pointer = module._malloc(2048 * 4);
+          cpp_mfcc = module.cwrap('mfcc', null, ['number', 'number']);
         } else {
           module._free(pointer);
           pointer = null;
