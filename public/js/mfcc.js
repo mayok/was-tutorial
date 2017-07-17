@@ -16,29 +16,20 @@ function _range(start, stop, step = 1) {
 function mfcc( audioBuffer ) {
   var sampleRate = 44100;
   var len = audioBuffer.length;
-  var t = _range(0.0, len / sampleRate, 1 / sampleRate);
 
   var center = len / 2;
   var cuttime = 0.04;
   var wav = audioBuffer.getChannelData(0);
   var wavdata = wav.slice(center - cuttime/2*sampleRate, center + cuttime/2*sampleRate);
-  // var time = t.slice(center - cuttime/2*sampleRate, center + cuttime/2*sampleRate);
 
-  // var owavdata = wavdata.slice();
-
-  // pre-emphasis filter
-  var pwavdata = preEmphasis(wavdata, 0.97);
-
-  var hammingWindow = hamming(pwavdata.length);
-  for(var i = 0; i < pwavdata.length; i +=1 ) {
-    pwavdata[i] *= hammingWindow[i]
-  }
+  // pre emphasis filter and hamming window
+  wavdata = preEmphHamming(wavdata);
 
   // DFT
   // number of samples
   var n = 2048
   var im = [];
-  [wavdata, im] = minifft(pwavdata, n);
+  [wavdata, im] = minifft(wavdata, n);
 
 
   var Pdft = [];
@@ -48,7 +39,6 @@ function mfcc( audioBuffer ) {
 
   // mel filterbank
   var numChannels = 20;
-  df = sampleRate / n
   var filterbank, fcenters;
   [filterbank, fcenters] = melFilterBank(sampleRate, n, numChannels);
 
@@ -142,6 +132,19 @@ function preEmphasis(signal, p = 0.97) {
   y[0] = signal[0];
   for(var i = 1; i < signal.length; i+=1){
     y[i] = signal[i] - ( p * signal[i - 1]);
+  }
+
+  return y;
+}
+
+function preEmphHamming(signal) {
+  var n = signal.length;
+  var y = [];
+  y[0] = signal[0];
+
+  for(var i = 1; i < n; i++) {
+    y[i] = signal[i] - (0.97 * signal[i-1]);
+    y[i] = 0.54 - 0.46 * Math.cos( 2.0 * Math.PI * i / (n - 1));
   }
 
   return y;
