@@ -42,11 +42,13 @@
 
       if(document.getElementById('checkbox').checked) {
         var mspec = mfcc(inputBuffer);
-
-        var offset = pointer / 8;
-        module.HEAPF64.set(new Float64Array(mspec), offset);
-        var v = cpp_mfcc(pointer, mspec.length);
-        console.log(v);
+        
+        if(mspec !== null) {
+          var offset = pointer / 8;
+          module.HEAPF64.set(new Float64Array(mspec), offset);
+          var v = cpp_mfcc(pointer, mspec.length);
+          console.log(v);
+        }
       }
     }
 
