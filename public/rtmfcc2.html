@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <title>webaudio sample</title>
+</head>
+<body>
+  checkbox: <input type="checkbox" id="checkbox">
+
+  <script type="text/javascript" src="js/mfcc.js" async></script>
+  <script type="text/javascript" src="tmp.js"></script>
+  <script>
+    // for wasm;
+    let module;
+    let cpp_mfcc = null;
+
+    window.AudioContext = window.AudioContext || window.webkitAudioContext;
+    const context = new AudioContext();
+
+    var processor = context.createScriptProcessor( 2048, 1, 1 );
+    processor.onaudioprocess = rtmfccProcess;
+    processor.connect(context.destination);
+
+    var bf = context.createBiquadFilter();
+    bf.type = 'lowpass';
+    bf.frequency.value = 2048;
+    bf.connect(processor);
+
+    navigator.mediaDevices.getUserMedia({
+      audio: true,
+      video: false,
+    }).then(function(stream) {
+      var input = context.createMediaStreamSource(stream);
+      input.connect(bf);
+    }).catch(function(err) {
+      console.log(err.name + ": " + err.message);
+    });
+
+    function rtmfccProcess(e) {
+      var inputBuffer = e.inputBuffer;
+      if(inputBuffer === undefined) return;
+
+      if(document.getElementById('checkbox').checked) {
+        var mspec = mfcc(inputBuffer);
+        
+        if(mspec !== null) {
+          var offset = pointer / 8;
+          module.HEAPF64.set(new Float64Array(mspec), offset);
+          var v = cpp_mfcc(pointer, mspec.length);
+          console.log(v);
+        }
+      }
+    }
+
+    function fetchWasm(url) {
+      fetch(url)
+      .then(response => response.arrayBuffer())
+      .then(buffer => new Uint8Array(buffer))
+      .then(binary => {
+        var moduleArgs = {
+          wasmBinary: binary
+        }
+        module = Module(moduleArgs);
+      });
+    }
+
+    function mallocation() {
+      if(document.getElementById('checkbox').checked) {
+        pointer = module._malloc(12 * 8);
+        cpp_mfcc = module.cwrap('gmm', 'number', ['number', 'number']);
+      } else {
+        module._free(pointer);
+        pointer = null;
+      }
+    }
+
+    module = fetchWasm('tmp.wasm');
+    document.getElementById('checkbox').addEventListener('click', mallocation , false);
+    window.onbeforeunload = function() {
+      module._free(pointer);
+    }
+  </script>
+</body>
+</html>

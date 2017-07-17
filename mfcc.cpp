@@ -2,7 +2,6 @@
 #include <cmath>
 #include <vector>
 #include <complex>
-#include <map>
 #include <algorithm>
 #include <emscripten/emscripten.h>
 
@@ -14,40 +13,6 @@ extern "C" {
     printf("Hello world!\n");
     return 0;
   }
-
-  // C-linkage ... というエラーが出るので，書き直した
-  // EMSCRIPTEN_KEEPALIVE
-  // std::vector<std::complex<double> > fft(std::vector<std::complex<double> > x) {
-  //   int N = x.size();
-  //   if (N==1) return x;
-  //
-  //   std::vector<std::complex<double> > xe(N/2,0), xo(N/2, 0), Xjo, Xjo2;
-  //   int i;
-  //
-  //   for(i=0;i<N;i+=2) xe[i/2] = x[i];
-  //   for(i=1;i<N;i+=2) xo[(i-1)/2] = x[i];
-  //
-  //   Xjo = fft(xe);
-  //   Xjo2 = fft(xo);
-  //   Xjo.insert (Xjo.end(), Xjo2.begin(), Xjo2.end());
-  //
-  //   // TODO: この部分を先に計算しておきたい
-  //   std::map<int,std::map<int,std::complex<double> > > bt;
-  //   const std::complex<double> J(0,1);
-  //   for(int n=2;n<=NUM_FFT;n*=2) {
-  //     for(int k=0;k<=n/2-1;k++) {
-  //       bt[n][k] = exp(-2*PI*k/n*J);
-  //     }
-  //   }
-  //
-  //   for(i=0;i<N/2-1;i++) {
-  //     std::complex<double> t = Xjo[i], tw = bt[N][i];
-  //     Xjo[i] = t + tw * Xjo[i+N/2];
-  //     Xjo[i+N/2] = t = tw * Xjo[i+N/2];
-  //   }
-  //
-  //   return Xjo;
-  // }
 
   // fft
   EMSCRIPTEN_KEEPALIVE
@@ -186,17 +151,21 @@ extern "C" {
   EMSCRIPTEN_KEEPALIVE
   void mfcc(float * _signal, size_t length) {
     std::vector<float> mspec(20);
-    std::vector<float> s(std::begin(_signal), std::end(_signal));
+    std::vector<float> s(length);
+    for(int i=0; i<length; i++)
+      s[i] = _signal[i];
 
     preEmphHamming(s);
     powerSpectrum(s);
     lmfb(s, mspec);
     dct(mspec);
 
-    printf("mfcc: \n");
-    for(int i = 0; i < 12; i++) {
-      printf("%d: %f\n", i, mspec[i]);
-    }
+    printf("mfcc 0: %8.3e\n", mspec[0]);
+
+    // printf("mfcc: \n");
+    // for(int i = 0; i < 12; i++) {
+    //   printf("%d: %f\n", i, mspec[i]);
+    // }
   }
 
 }
